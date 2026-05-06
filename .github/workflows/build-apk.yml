@@ -1,0 +1,57 @@
+name: Build GeoCheckr APK
+
+on:
+  push:
+    branches: [main, german, 'scanner-*']
+    paths-ignore:
+      - '**.md'
+      - 'GeoCheckr_Material/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Prebuild Android
+        run: npx expo prebuild --platform android --clean
+      
+      - name: Add Street View native files
+        run: node scripts/patch-android.js
+      
+      - name: Build Release APK
+        working-directory: ./android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon -Dorg.gradle.jvmargs="-Xmx2048m"
+      
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: geocheckr-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Summary
+        run: |
+          echo "## APK Build Complete" >> $GITHUB_STEP_SUMMARY

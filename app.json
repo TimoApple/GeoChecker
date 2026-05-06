@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "Geo Checker D",
+    "slug": "geo-checker-d",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#262523"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.geocheckr.app.de"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#262523"
+      },
+      "package": "com.geocheckr.app.de",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCl3ogHqguF1QcwhyHdvJmUkbgx3bpKLJI"
+        }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "GeoCheckr — Geografie Party-Spiel",
+      "shortName": "GeoCheckr",
+      "description": "Finde den Ort! Ein Geografie-Party-Spiel für 2-8 Spieler.",
+      "backgroundColor": "#262523",
+      "themeColor": "#e94560",
+      "display": "standalone",
+      "orientation": "portrait"
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-asset",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./node_modules/@expo-google-fonts/space-grotesk/400Regular/SpaceGrotesk_400Regular.ttf",
+            "./node_modules/@expo-google-fonts/space-grotesk/500Medium/SpaceGrotesk_500Medium.ttf",
+            "./node_modules/@expo-google-fonts/space-grotesk/600SemiBold/SpaceGrotesk_600SemiBold.ttf",
+            "./node_modules/@expo-google-fonts/space-grotesk/700Bold/SpaceGrotesk_700Bold.ttf"
+          ]
+        }
+      ],
+      "react-native-video"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b47d3e21-7bed-4c8b-bd12-e805eb1380f8"
+      }
+    },
+    "owner": "tboese"
+  }
+}
