@@ -173,9 +173,9 @@ export default function App() {
         setTimeout(() => setScanError(''), 2500);
         return;
       }
-      const takenBy = players.find(p => loc.name && p.city && p.city.toLowerCase() === loc.name.toLowerCase() && players.indexOf(p) !== scanCityForIdx);
-      if (takenBy) {
-        setScanError(`Diese Karte ist bereits vergeben von ${takenBy.name}`);
+      const isIdAlreadyAssigned = players.some((p, index) => index !== scanCityForIdx && p.cityId === id);
+      if (isIdAlreadyAssigned) {
+        setScanError(`Diese ID (${id}) ist bereits vergeben.`);
         setTimeout(() => setScanError(''), 2500);
         return;
       }
@@ -214,8 +214,8 @@ export default function App() {
     if (!manualCode.trim() || scanCityForIdx === null) return;
     const code = manualCode.trim();
     const assign = (loc: PanoramaLocation, id: number) => {
-      const takenBy = players.find(p => loc.name && p.city && p.city.toLowerCase() === loc.name.toLowerCase() && players.indexOf(p) !== scanCityForIdx);
-      if (takenBy) { setScanError(`Diese Karte ist bereits vergeben von ${takenBy.name}`); setTimeout(() => setScanError(''), 2500); return; }
+      const isIdAlreadyAssigned = players.some((p, index) => index !== scanCityForIdx && p.cityId === id);
+      if (isIdAlreadyAssigned) { setScanError(`Diese ID (${id}) ist bereits vergeben.`); setTimeout(() => setScanError(''), 2500); return; }
       playClickSound(); Vibration.vibrate(100);
       setUsedLocations(prev => [...prev, id]);
       setPlayers(prev => prev.map((p, i) => i === scanCityForIdx ? { ...p, city: loc.name, cityId: id, lat: loc.lat, lng: loc.lng } : p));

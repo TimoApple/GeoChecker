@@ -30,6 +30,7 @@ export function useArucoScanner(
   const internalCameraRef = useRef<CameraView>(null);
   const cameraRef = externalCameraRef ?? internalCameraRef;
   const isScanningRef = useRef(false);
+  const isProcessingRef = useRef(false);
   const fallbackModeRef = useRef(false);
   const consecutiveErrorsRef = useRef(0);
   const cameraReadyRef = useRef(false);
@@ -130,6 +131,15 @@ export function useArucoScanner(
       const result = decodeAndDetect(base64);
       if (!result) return false;
 
+      // Verarbeitungs-Sperre: kein weiterer Frame während UI noch rendert
+      if (result.markers.length > 0 && !isProcessingRef.current) {
+        isProcessingRef.current = true;
+        stopScanning();
+        const ids = result.markers.map(m => m.id).filter(id => VALID_MARKER_IDS.has(id));
+        callbacks?.onDetected?.(ids);
+        return true;
+      }
+
       const ids = handleDetectedMarkers(result.markers);
       return ids.length > 0;
     } catch (e) {
@@ -187,6 +197,7 @@ export function useArucoScanner(
 
     console.log('[ArUco] startScanning – Loop startet');
     isScanningRef.current = true;
+    isProcessingRef.current = false;
     setIsScanning(true);
     setLastResult(null);
     consecutiveErrorsRef.current = 0;
