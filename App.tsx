@@ -162,8 +162,8 @@ export default function App() {
     player.play();
   });
 
-  // City-Scan: ArUco Scanner für Setup-Phase (per Button-Druck)
-  const { triggerScan: triggerCityScan } = useArucoScanner(undefined, {
+  // City-Scan: ArUco Scanner für Setup-Phase (nicht mehr aktiv genutzt, aber Hook bleibt für onDetected-Callback)
+  const { startScanning: triggerCityScan } = useArucoScanner(undefined, {
     onDetected: (ids) => {
       if (!showCityScanner || scanCityForIdx === null || ids.length === 0) return;
       const id = ids[0];

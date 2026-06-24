@@ -120,25 +120,26 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
     setTimeout(() => setScanError(''), 2500);
   }, []);
 
-  const scannerOptions = useMemo(() => ({ onDetected, onError }), [onDetected, onError]);
-  const { triggerScan, isScanning, cameraReady, onCameraReady } = useArucoScanner(cameraRef as any, scannerOptions);
+  const scannerCallbacks = useMemo(() => ({ onDetected, onError }), [onDetected, onError]);
+  const { startScanning, stopScanning, isScanning, cameraReady, onCameraReady } = useArucoScanner(cameraRef as any, scannerCallbacks);
 
-  const handleScan = useCallback(() => {
-    if (!cameraReady) {
-      setScanError('Kamera noch nicht bereit');
-      setTimeout(() => setScanError(''), 1500);
-      return;
+  // Auto-Start: Scan beginnt sobald Phase 'scan-qr' UND Kamera bereit
+  useEffect(() => {
+    if (phase === 'scan-qr' && cameraReady) {
+      startScanning();
+    } else {
+      stopScanning();
     }
-    setScanError('');
-    triggerScan();
-  }, [cameraReady, triggerScan]);
+  }, [phase, cameraReady]);
 
+  // Timer-Countdown
   useEffect(() => {
     if (phase !== 'view' || timerPaused || timer <= 0) return;
     const interval = setInterval(() => setTimer(t => t - 1), 1000);
     return () => clearInterval(interval);
   }, [phase, timerPaused, timer]);
 
+  // Timer-Effekte (Pulse + Sound)
   useEffect(() => {
     if (timer <= 10 && timer > 0 && phase === 'view') {
       playTimerTick();
@@ -155,6 +156,7 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
     }
   }, [timer, phase, timerPulse]);
 
+  // Ladezeit-Indikator für Panorama
   useEffect(() => {
     if (phase !== 'view' || svLoaded || svError) {
       setSvLoadingLong(false);
@@ -205,10 +207,9 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
   const resolveRound = useCallback(() => {
     if (activePickIdx === null || !location) return;
 
-    // Distanzen erst hier beim Auflösen berechnen, damit vorher in der Challenge-Phase nicht gespickt werden kann
     const dists = tableCities.map(tc => calculateDistance(location.lat, location.lng, tc.lat, tc.lng));
     setDistances(dists);
-    
+
     let minIdx = 0;
     for (let i = 1; i < dists.length; i++) {
       if (dists[i] < dists[minIdx]) minIdx = i;
@@ -258,6 +259,7 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
     startRound();
   };
 
+  // ─── SCAN-QR PHASE ───
   if (phase === 'scan-qr') {
     return (
       <View style={s.container}>
@@ -268,30 +270,48 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
             <Text style={{ color: C.onSurface, fontSize: 24, fontFamily: FF.bold, marginBottom: 4 }}>{activePlayer.name}</Text>
             <Text style={{ color: C.muted, fontSize: 14, fontFamily: FF.regular }}>Punkte: {activePlayer.score}</Text>
           </View>
+
           <View style={{ alignItems: 'center' }}>
-            <View style={{ width: 240, height: 240, borderWidth: 2, borderColor: C.primary, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: C.primary, fontSize: 13, fontFamily: FF.regular, textAlign: 'center' }}>
-                {cameraReady ? 'Karte in den Rahmen halten' : 'Kamera wird geladen...'}
+            {/* Scan-Rahmen */}
+            <View style={{ width: 240, height: 240, borderWidth: 2, borderColor: isScanning ? C.primary : C.outline, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: isScanning ? C.primary : C.muted, fontSize: 13, fontFamily: FF.regular, textAlign: 'center' }}>
+                {!cameraReady
+                  ? 'Kamera wird geladen...'
+                  : isScanning
+                    ? 'SUCHE MARKER...'
+                    : 'Karte in den Rahmen halten'}
               </Text>
             </View>
+
+            {/* Fehler-Anzeige */}
             {scanError ? (
               <View style={{ backgroundColor: 'rgba(255,100,100,0.9)', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 20, marginTop: 16 }}>
                 <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{scanError}</Text>
               </View>
             ) : null}
+
+            {/* Scanning-Indikator */}
+            {isScanning && (
+              <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.primary }} />
+                <Text style={{ color: C.primary, fontSize: 12, fontFamily: FF.bold, letterSpacing: 1 }}>AKTIV</Text>
+              </View>
+            )}
           </View>
+
+          {/* loadNewCard-Button bleibt erhalten (für kaputte/fehlende Karten) */}
           <TouchableOpacity
-            style={[s.primaryBtn, { opacity: cameraReady && !isScanning ? 1 : 0.5 }]}
-            onPress={handleScan}
-            disabled={!cameraReady || isScanning}
+            style={[s.secondaryBtn]}
+            onPress={loadNewCard}
           >
-            <Text style={s.primaryBtnText}>{isScanning ? 'SCANNT...' : 'SCANNEN'}</Text>
+            <Text style={s.secondaryBtnText}>NEUE KARTE LADEN</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
+  // ─── VIEW PHASE ───
   if (phase === 'view' && location) {
     return (
       <View style={s.container}>
@@ -339,6 +359,7 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
     );
   }
 
+  // ─── PICK PHASE ───
   if (phase === 'pick') {
     return (
       <View style={s.container}>
@@ -364,6 +385,7 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
     );
   }
 
+  // ─── CHALLENGE PHASE ───
   if (phase === 'challenge' && location) {
     const pickedCity = activePickIdx !== null ? tableCities[activePickIdx]?.city : '';
 
@@ -374,7 +396,7 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
           <Text style={{ color: C.onSurface, fontSize: 18, fontFamily: FF.bold, marginBottom: 20 }}>
             {activePlayer.name} wählte: {pickedCity}
           </Text>
-          
+
           <View style={{ marginBottom: 20 }}>
             <Text style={{ color: C.primary, fontSize: 14, fontFamily: FF.bold, marginBottom: 10 }}>Jemand anderes? (Token einsetzen)</Text>
             <ScrollView horizontal style={{ marginBottom: 10 }}>
@@ -398,6 +420,7 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
     );
   }
 
+  // ─── RESULT PHASE ───
   if (phase === 'result' && location) {
     const isTie = players.filter(p => p.score === Math.max(...players.map(pl => pl.score))).length > 1;
 
@@ -423,7 +446,6 @@ export default function GameScreen({ players: initialPlayers, timerSetting, roun
               {location.name} ({location.district})
             </Text>
 
-            {/* Zeige die Entfernungen erst hier im Ergebnis-Screen an */}
             {activePickIdx !== null && distances[activePickIdx] !== undefined && closestCityIdx !== null && (
               <View style={{ backgroundColor: C.surface, padding: 15, borderRadius: 8, marginBottom: 30, width: width - 60 }}>
                 <Text style={{ color: C.onSurface, fontFamily: FF.regular, fontSize: 14, marginBottom: 6 }}>
@@ -478,4 +500,6 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   primaryBtn: { backgroundColor: C.primary, paddingVertical: 14, paddingHorizontal: 32, alignItems: 'center', marginBottom: 12 },
   primaryBtnText: { color: C.onPrimary, fontSize: 16, fontFamily: FF.bold, letterSpacing: 2 },
+  secondaryBtn: { borderWidth: 1, borderColor: C.outline, paddingVertical: 12, paddingHorizontal: 32, alignItems: 'center' },
+  secondaryBtnText: { color: C.muted, fontSize: 13, fontFamily: FF.bold, letterSpacing: 2 },
 });

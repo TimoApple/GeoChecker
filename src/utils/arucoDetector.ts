@@ -1,10 +1,11 @@
 ﻿// ArUco Marker Detector – pure JS, no native code
-// Uses js-aruco2 (original js-aruco port) with ARUCO dictionary (7x7 markers, 250 IDs)
-// 7x7 = Standard ArUco DICT_7X7_250 (250 IDs, 5-bit hamming distance)
+// Uses js-aruco2 with ARUCO_5X5_1000 dictionary (5x5 markers, 250 IDs)
 // Das ist das korrekte Dictionary für die gedruckten Karten (aruco_001.svg – aruco_100.svg)
 
 // Lokale Kopie von js-aruco2 mit ES-Modul-Export
 import AR from '../libs/aruco';
+// 5x5 Dictionary einbinden (registriert AR.DICTIONARIES['ARUCO_5X5_1000'])
+import '../libs/aruco_5x5_100';
 
 export interface ArucoResult {
   id: number;
@@ -17,7 +18,7 @@ let detector: any = null;
 function getDetector() {
   try {
     if (!detector) {
-      detector = new AR.Detector({ dictionaryName: 'ARUCO', maxHammingDistance: 4 });
+      detector = new AR.Detector({ dictionaryName: 'ARUCO_5X5_1000', maxHammingDistance: 3 });
     }
     return detector;
   } catch (e) {
@@ -27,9 +28,10 @@ function getDetector() {
 }
 
 /**
- * Detect ArUco markers from raw image pixel data
- * Uses js-aruco2's AR.Detector with ARUCO dictionary (7x7 markers, 250 IDs)
- * 
+ * Detect ArUco markers from raw image pixel data.
+ * Uses js-aruco2's AR.Detector with ARUCO_5X5_1000 dictionary (5x5 markers, 250 IDs).
+ * IDs werden 1:1 zurückgegeben – kein Offset.
+ *
  * @param imageData - Uint8ClampedArray (RGBA, 4 bytes per pixel)
  * @param width - image width in pixels
  * @param height - image height in pixels
@@ -44,26 +46,16 @@ export function detectMarkers(
   if (!det) return [];
 
   try {
-    // js-aruco2 braucht ein Graustufen-Array (1 Byte/Pixel), kein RGBA
     const imgData = { data: imageData, width, height };
     const markers = det.detect(imgData);
 
     if (!markers || markers.length === 0) {
-      console.log('[ArUco] Keine Marker erkannt');
       return [];
     }
-
-    console.log('[ArUco] Marker gefunden:', markers.length);
 
     const results = markers
       .filter((m: any) => m && m.id !== undefined && m.id >= 0 && m.id <= 249 && m.corners)
       .map((m: any) => {
-        // Debug: rohe ID aus dem Detector ausgeben
-        console.log('[ArUco] dictionary used: ARUCO (7x7)');
-        console.log('[ArUco] raw detector id:', m.id);
-        const mappedId = m.id + 1;
-        console.log('[ArUco] mapped arucoId:', mappedId);
-
         const corners = m.corners.map((c: any) => ({
           x: typeof c.x === 'number' ? c.x : c[0],
           y: typeof c.y === 'number' ? c.y : c[1],
@@ -86,7 +78,6 @@ export function detectMarkers(
     console.error('[ArUco] Detection error:', e);
   }
 
-  console.log('[ArUco] Keine Marker erkannt');
   return [];
 }
 
