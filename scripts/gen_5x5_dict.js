@@ -20,9 +20,9 @@ const hexEntries = entries.map(toHex);
 const output = `// ArUco 5x5 Dictionary (DICT_5X5_1000) – erste 250 Einträge
 // Generiert aus _dict_5x5_1000.json
 // Format: 5x5 Marker, 1000 IDs, 5-bit Hamming-Distanz
-// Deckt IDs 0-99 ab (Marker aruco_001 bis aruco_100) + Puffer
+// Deckt IDs 0-249 ab
 
-AR.DICTIONARIES['ARUCO_5X5_1000'] = {
+export const ARUCO_5X5_1000 = {
   nBits: 25,
   tau: 5,
   codeList: [${hexEntries.join(',')}]

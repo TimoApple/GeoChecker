@@ -4,8 +4,9 @@
 
 // Lokale Kopie von js-aruco2 mit ES-Modul-Export
 import AR from '../libs/aruco';
-// 5x5 Dictionary einbinden (registriert AR.DICTIONARIES['ARUCO_5X5_1000'])
-import '../libs/aruco_5x5_100';
+// 5x5 Dictionary: named import, dann manuell in AR.DICTIONARIES registrieren
+import { ARUCO_5X5_1000 } from '../libs/aruco_5x5_100';
+AR.DICTIONARIES['ARUCO_5X5_1000'] = ARUCO_5X5_1000;
 
 export interface ArucoResult {
   id: number;
